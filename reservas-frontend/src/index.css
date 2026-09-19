@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* Tailwind v4 usa prefers-color-scheme por default para el variant "dark:".
+   Esta línea lo cambia a estrategia por clase, para poder alternar el tema
+   con un botón (toggle) en vez de depender de la configuración del SO. */
+@custom-variant dark (&:where(.dark, .dark *));

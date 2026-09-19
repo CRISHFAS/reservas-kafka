@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Test WebSocket - Reservas</title>
+    <style>
+        body { font-family: monospace; background: #111; color: #0f0; padding: 20px; }
+        #log { white-space: pre-wrap; border: 1px solid #0f0; padding: 10px; height: 400px; overflow-y: auto; }
+        input, button { font-family: monospace; padding: 5px; margin: 5px 0; }
+        .rejected { color: #f55; }
+        .held { color: #5f5; }
+    </style>
+</head>
+<body>
+    <h2>Test WebSocket - Fase 5</h2>
+    <div>
+        <label>showId a suscribir:</label><br>
+        <input id="showId" type="text" size="40" value="a1a1a1a1-1111-1111-1111-111111111111">
+        <button onclick="conectar()">Conectar y suscribirse</button>
+    </div>
+    <p id="estado">Estado: desconectado</p>
+    <div id="log"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script>
+        let stompClient = null;
+
+        function log(msg, cssClass) {
+            const div = document.getElementById('log');
+            const line = document.createElement('div');
+            if (cssClass) line.className = cssClass;
+            line.textContent = new Date().toLocaleTimeString() + ' - ' + msg;
+            div.appendChild(line);
+            div.scrollTop = div.scrollHeight;
+        }
+
+        function conectar() {
+            const showId = document.getElementById('showId').value.trim();
+            if (!showId) { alert('Ingresá un showId'); return; }
+
+            const socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+
+            stompClient.connect({}, function () {
+                document.getElementById('estado').textContent = 'Estado: conectado, suscripto a /topic/shows/' + showId;
+                log('Conectado. Suscripto a /topic/shows/' + showId);
+
+                stompClient.subscribe('/topic/shows/' + showId, function (message) {
+                    const data = JSON.parse(message.body);
+                    const cssClass = data.result === 'HELD' ? 'held' : 'rejected';
+                    log('Evento recibido: ' + JSON.stringify(data), cssClass);
+                });
+            }, function (error) {
+                log('Error de conexión: ' + error);
+                document.getElementById('estado').textContent = 'Estado: error de conexión';
+            });
+        }
+    </script>
+</body>
+</html>
