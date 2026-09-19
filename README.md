@@ -122,6 +122,10 @@ When a reservation is rejected (seat unavailable), no row is written to `reserva
 
 A user can hold at most one seat per show at a time (enforced server-side, not just in the UI). This is a pragmatic decision reflecting the lack of real authentication (`userId` is just a client-generated identifier), not a technical limitation — see [Known limitations](#known-limitations-conscious-scope-not-oversights).
 
+### The frontend didn't check who actually held the seat
+
+Discovered while recording the demo GIF: two different browsers each showed the *same* seat as "yours", with the exact same countdown, regardless of which user actually held it. Root cause: `myHeldSeat` only filtered for "any seat currently `HELD`", never comparing `seat.heldBy` against the local `userId` — and the backend's `SeatResponseDto` didn't even expose `heldBy` to check against. **Fix**: exposed `heldBy` in the DTO, and the frontend filter (both on initial load and on live WebSocket updates) now requires `seat.heldBy === userId`. A reminder that "it looks right with one browser tab open" isn't the same as "it's actually scoped per user" — this only surfaced by testing with two simultaneous real clients.
+
 ## Tech stack
 
 **Backend**: Java 21, Spring Boot 4.1, Spring Kafka, Spring Data JPA, Flyway, PostgreSQL 16, Apache Kafka (KRaft mode, no Zookeeper).

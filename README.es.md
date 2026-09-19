@@ -122,6 +122,10 @@ Cuando se rechaza una reserva (asiento no disponible), no se escribe ninguna fil
 
 Un usuario puede retener como máximo un asiento por función a la vez (validado del lado del servidor, no solo en la UI). Es una decisión pragmática que refleja la ausencia de autenticación real (`userId` es solo un identificador generado del lado del cliente), no una limitación técnica — ver [Limitaciones conocidas](#limitaciones-conocidas-alcance-consciente-no-descuidos).
 
+### El frontend no verificaba quién tenía realmente el asiento
+
+Descubierto grabando el GIF de demo: dos navegadores distintos mostraban el *mismo* asiento como "tuyo", con el mismo cronómetro exacto, sin importar cuál usuario lo tenía en realidad. Causa raíz: `myHeldSeat` solo filtraba "cualquier asiento `HELD`", sin comparar `seat.heldBy` contra el `userId` local — y el `SeatResponseDto` del backend ni siquiera exponía `heldBy` para poder compararlo. **Fix**: se expuso `heldBy` en el DTO, y el filtro del frontend (tanto en la carga inicial como en las actualizaciones en vivo por WebSocket) ahora exige `seat.heldBy === userId`. Un recordatorio de que "se ve bien con una sola pestaña abierta" no es lo mismo que "está realmente acotado por usuario" — esto solo salió a la luz probando con dos clientes reales simultáneos.
+
 ## Stack tecnológico
 
 **Backend**: Java 21, Spring Boot 4.1, Spring Kafka, Spring Data JPA, Flyway, PostgreSQL 16, Apache Kafka (modo KRaft, sin Zookeeper).
